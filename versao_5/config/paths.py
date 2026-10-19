@@ -5,15 +5,7 @@ import sys
 _IN_COLAB = "google.colab" in sys.modules
 
 if _IN_COLAB:
-    # Hardcode: the notebook clones this project's own GitHub repository —
-    # "analise_desenvolvimento2" (versão_5), distinct from the original
-    # project's repository ("analise_desenvolvimento", which holds
-    # versão_4). `git clone` names the local directory after the repo by
-    # default, so Colab will place it at /content/analise_desenvolvimento2.
-    # If the repo is ever cloned under a different local name, update this
-    # constant to match — the _candidates[0] auto-detection approach was
-    # tried before and rejected as fragile (picks the wrong directory if
-    # /content has any other entry sorting before it alphabetically).
+
     ROOT = "/content/analise_desenvolvimento2"
 else:
     ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,15 +35,6 @@ for _d in [
 if DRIVE_DIR:
     os.makedirs(DRIVE_DIR, exist_ok=True)
 
-
-# CORRECTION (user request — "em cada ano de previsão tem que gerar os
-# artefactos... de forma independente e salvar tudo"): every genuine
-# forecast horizon (t+1, ..., t+5 — no contemporaneous/t case) now gets its
-# own subdirectory under each artifact root
-# (models/artefacts/h{H}/, tuning/results/h{H}/, reports/h{H}/,
-# figures/h{H}/, explainability/results/h{H}/), so a model, hyperparameter
-# table, results table or figure never collides across horizons and each
-# horizon's full output set can be inspected/shipped on its own.
 def horizon_dir(base_dir: str, horizon: int) -> str:
     """Return base_dir/h{horizon}/, creating it if needed."""
     d = os.path.join(base_dir, f"h{horizon}")
