@@ -1,24 +1,4 @@
-"""features/engineer.py — Fold-safe feature engineering for panel data.
 
-All transformations (lags, rolling means, PCA) are fitted on training
-data only and applied to test data via fit/transform — no look-ahead bias.
-
-CORRECTION (versão_5, discovered while implementing genuine h-step-ahead
-forecasting — see validation/walk_forward.py::build_horizon_target and
-preprocessing/temporal.py): _add_lags()/_add_deltas() used to build lag/
-delta features with a POSITIONAL shift within each country's sorted rows
-(df.groupby("country_code")[col].shift(lag)). The WGI-merged panel is only
-biennial for 1996-2002 (1997/1999/2001 do not exist for ANY country), so a
-positional shift(1) at year 2000 silently pulled the 1998 value — a 2-year
-gap mislabelled as "_lag1". This never surfaced before because nothing
-downstream depended on the lag being calendar-exact. It matters here
-because a genuine forecast horizon is defined in calendar years, so
-_add_lags/_add_deltas now use preprocessing.temporal.year_exact_shift(),
-which matches by (country, year) instead of by row position and returns
-NaN — correctly — when no row for the exact target year exists.
-_add_rolling() is unchanged: a trailing mean over "whatever observations
-exist in the window" remains a defensible definition even across a gap.
-"""
 import numpy as np
 import pandas as pd
 import joblib
