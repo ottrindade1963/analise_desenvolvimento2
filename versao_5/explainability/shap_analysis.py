@@ -143,17 +143,7 @@ def shap_kernel_analysis(model, X_bg: pd.DataFrame,
                          X_explain: pd.DataFrame,
                          label: str, out_dir: str,
                          predict_fn=None) -> dict:
-    """
-    predict_fn : callable, optional — overrides `model.predict` as the
-    function KernelExplainer perturbs against. CORRECTION (user request):
-    added because LSTMModel.predict() has sliding-window semantics (one
-    continuous series in, len(X)-lookback+1 predictions out) that violate
-    KernelExplainer's one-prediction-per-row contract and made it fail
-    silently for every LSTM call. Callers now pass
-    `model.predict_independent_rows` for LSTM specifically; all other
-    models keep the default (plain `model.predict`, already one-row-in/
-    one-row-out — SARIMAX and the Bayesian models were unaffected).
-    """
+   
     shap = _load_shap()
     os.makedirs(out_dir, exist_ok=True)
 
