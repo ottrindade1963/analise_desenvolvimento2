@@ -7,26 +7,7 @@ selection criteria in one place.
 
 SEED = 42
 
-# CORRECTION (user request — "os modelos não estão bem sintonizados,
-# implemente 3 seeds que fazem sentido no contexto dos dados e realidade do
-# projecto"): every model in this pipeline used to read the single hardcoded
-# SEED=42 directly, so there was never any way to see whether a reported
-# RMSE/R2 reflected genuine model skill or just one lucky/unlucky
-# initialization. SEEDS below is what every train() function now accepts as
-# an explicit override (validation/walk_forward.py's evaluate_multi_seed()
-# loops over it). The three values are arbitrary-but-fixed, chosen only for
-# diversity and reproducibility — NOT tuned or cherry-picked to favor any
-# outcome:
-#   7, 42, 90 — arbitrary-but-fixed, chosen only for diversity and
-#          reproducibility, per explicit user request (replacing the
-#          earlier {42, 7, 2024} set with {7, 42, 90}). 42 is kept as the
-#          project's original default so single-seed results already
-#          produced (saved models, prior reports) stay the reference point
-#          for continuity; 7 and 90 are small values from materially
-#          different regions of the seed space.
-# Nothing about the data or the research question makes any specific integer
-# seed more "correct" than another — the point of running three is to
-# measure sensitivity to initialization, not to search for a favorable one.
+
 SEEDS = [7, 42, 90]
 
 # ── Random Forest ─────────────────────────────────────────────────────────────
