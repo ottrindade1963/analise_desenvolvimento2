@@ -110,14 +110,7 @@ class FoldFeatureEngineer(BaseEstimator, TransformerMixin):
         # 2. Raw WGI lags
         if self._use_raw:
             df, _ = self._add_lags(df, self._wgi_cols, self.lags_wgi)
-
-        # CORRECTION (root-cause diagnostic report, Secção 2 / recomendação #1):
-        # the contemporaneous raw WGI columns inherited from the input X were
-        # never dropped here, regardless of self._use_pca / self._use_raw — they
-        # leaked into every specification's feat_cols, including A1_WDI_only.
-        # They have already been used above (to build wgi_pca1 and/or the raw
-        # lag columns); now remove the contemporaneous originals unconditionally,
-        # exactly as the code already did for the derived "wgi_pca1" column.
+       
         raw_wgi_present = [c for c in self._wgi_cols if c in df.columns]
         if raw_wgi_present:
             df = df.drop(columns=raw_wgi_present)
@@ -189,17 +182,7 @@ class FoldFeatureEngineer(BaseEstimator, TransformerMixin):
         return df, new
 
     def _add_interactions(self, df):
-        # CORRECTION (root-cause diagnostic report, Secção 3 / recomendação #2):
-        # this method used to hardcode "wgi_pca1_lag1" as the only possible
-        # governance term. That column only exists when self._use_pca is True
-        # (specs A2/A4). For A5_WDI_6WGI_inter (wgi_pca=False, wgi_raw=True,
-        # interactions=True) pca_lag was always None, so this function returned
-        # df unchanged — A5 silently got zero interaction terms and became
-        # numerically identical to A3_WDI_6WGI.
-        #
-        # Fix: fall back to a composite governance signal built from the mean
-        # of the raw WGI lag-1 columns when the PCA lag is not available, so
-        # every spec with interactions=True actually gets non-trivial terms.
+      
         gov_lag, gov_label = None, None
         if "wgi_pca1_lag1" in df.columns:
             gov_lag   = df["wgi_pca1_lag1"]
