@@ -56,16 +56,7 @@ def _feat_cols(df: pd.DataFrame) -> list:
 
 def run_structural_breaks(df: pd.DataFrame) -> tuple:
     """
-    Detect structural breaks in the industrial value-added series per country.
-
-    Algorithm: PELT (Pruned Exact Linear Time) from the ruptures library,
-    with L2 cost function and penalty calibrated to series length.
-    Fallback: CUSUM-based detection when ruptures is not installed.
-
-    Returns two DataFrames:
-      df_breaks  — one row per detected break (country, year, magnitude)
-      df_regimes — panel with regime classification (CRISIS/STABLE/EXPANSION)
-    """
+    Detect structural breaks in the industrial value-added series per country. """
     os.makedirs(OUT_DIR, exist_ok=True)
     target = var.TARGET
 
@@ -189,16 +180,7 @@ def run_structural_breaks(df: pd.DataFrame) -> tuple:
 def run_counterfactual(df: pd.DataFrame,
                        spec: str = "A2_WDI_PCA1") -> pd.DataFrame:
     """
-    Localised counterfactual: ceteris paribus WGI perturbation.
-
-    For each country's last available observation, perturbs each
-    WGI-related feature by ±0.5 and ±1.0 standard deviations while
-    holding all other features constant (ceteris paribus), then records
-    the predicted change in industrial value added.
-
-    This reveals: "if governance had been better/worse by X std devs,
-    what would the model predict for industrial value added?"
-    """
+    Localised counterfactual: ceteris paribus WGI perturbation.  """
     os.makedirs(OUT_DIR, exist_ok=True)
 
     # Load best tree model for this spec
@@ -455,13 +437,7 @@ def run_aci_sensitivity(df: pd.DataFrame,
 def run_all_innovations(df: pd.DataFrame,
                         spec: str = "A2_WDI_PCA1") -> dict:
     """
-    Run all three innovations and return results dict.
-
-    Internally applies FoldFeatureEngineer so the model receives the
-    same feature-engineered input it was trained on (53 features).
-    Innovation 1 uses raw df — breaks are on the target series directly.
-    Innovations 2 and 3 use the feature-engineered dataset.
-    """
+    Run all three innovations and return results dict.  """
     import shutil
     from features.engineer import FoldFeatureEngineer
 
