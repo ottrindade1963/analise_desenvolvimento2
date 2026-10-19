@@ -1,9 +1,3 @@
-"""utils/tracking.py — MLflow experiment tracking wrapper.
-
-Provides a lightweight context manager that logs parameters, metrics,
-and artefacts to MLflow when available, and falls back to a no-op logger
-when MLflow is not installed or USE_MLFLOW=False.
-"""
 import os
 import json
 import datetime
@@ -25,15 +19,7 @@ class _NoOpRun:
 
 @contextmanager
 def experiment_run(run_name: str, tags: dict | None = None):
-    """
-    Context manager for a single experiment run.
-
-    Usage:
-        with experiment_run("RF_Agregado") as run:
-            run.log_params({"n_estimators": 200})
-            run.log_metric("RMSE", 2.31)
-            run.log_artifact("figures/rmse_plot.png")
-    """
+  
     if not cfg.USE_MLFLOW:
         yield _NoOpRun()
         return
