@@ -208,12 +208,7 @@ def run_counterfactual(df: pd.DataFrame,
         print(f"  No model found for {spec} — skipping counterfactual.")
         return pd.DataFrame()
     model, scaler, trained_feat_cols = loaded
-
-    # CORRECTION (root-cause diagnostic report, Secção 6, achado nº5 /
-    # recomendação #3): use the exact column set/order the model was trained
-    # on, and scale every vector with the persisted scaler before predict() —
-    # previously raw, unscaled feature values were fed straight into a model
-    # trained on standardized data, collapsing Y_Base into a narrow band.
+    
     feat_cols = [c for c in (trained_feat_cols or _feat_cols(df)) if c in df.columns]
     if scaler is None:
         print(f"    [aviso] {spec}: pickle sem scaler persistido (formato anterior à "
@@ -367,11 +362,7 @@ def run_aci_sensitivity(df: pd.DataFrame,
         print(f"  No model found for {spec} — skipping ACI.")
         return pd.DataFrame()
     model, scaler, trained_feat_cols = loaded
-
-    # CORRECTION (root-cause diagnostic report, Secção 7, achado nº6 /
-    # recomendação #3): use the model's own trained column set/order and
-    # apply the persisted scaler before predict() — previously X_cal/X_te
-    # were raw, unscaled values fed to a model trained on standardized data.
+    
     feat_cols = [c for c in (trained_feat_cols or _feat_cols(df)) if c in df.columns]
     if scaler is None:
         print(f"    [aviso] {spec}: pickle sem scaler persistido (formato anterior à "
@@ -477,18 +468,7 @@ def run_all_innovations(df: pd.DataFrame,
     os.makedirs(OUT_DIR, exist_ok=True)
     t0 = time.time()
     results = {}
-
-    # Build feature-engineered dataset for innovations 2 & 3
-    #
-    # CORRECTION (found in a later review pass, same family as the
-    # imputation look-ahead fix): this used to call fe.fit(df) on the
-    # ENTIRE panel, including the years that run_counterfactual()/
-    # run_aci_sensitivity() later treat as "test" via their own
-    # train/cal/test row split \u2014 so the PCA governance factor and lag
-    # structure were partly learned from data those two functions treat as
-    # future/held-out. Fit only on the same pre-holdout training years that
-    # pipeline.py._build_spec_datasets() and _train_and_evaluate() use, then
-    # transform the full panel \u2014 consistent, non-leaky feature construction.
+   
     print(f"  A construir features para spec={spec}...")
     years      = sorted(df["year"].unique())
     split_idx  = int(len(years) * (1 - cfg_pipe.FINAL_HOLDOUT_RATIO))
