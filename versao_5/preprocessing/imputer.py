@@ -43,20 +43,7 @@ class PanelMICEImputer(BaseEstimator, TransformerMixin):
         self.max_iter     = max_iter
         self.random_state = random_state
         self.country_col  = country_col
-        # CORRECTION (found while investigating suspiciously high R2 in the
-        # walk-forward results): by default this transformer imputed EVERY
-        # numeric column except "year" — including the target itself
-        # (config.variables.TARGET is just another numeric WDI column here).
-        # MICE reconstructs a missing target from the OTHER covariates in the
-        # same row (e.g. manufacturing value-added, which is highly
-        # correlated with industrial value-added). Those same covariates are
-        # then used as model features, so any row whose true label was
-        # missing got a fabricated label that the model could partially
-        # "reconstruct" from its own inputs — inflating R2/deflating RMSE
-        # specifically on those rows, for both training and (worse) test
-        # evaluation. Callers now pass exclude_cols=[var.TARGET] so the
-        # target is NEVER imputed; rows with a genuinely missing target stay
-        # NaN and are dropped explicitly by the caller before fit/scoring.
+        
         self.exclude_cols = list(exclude_cols) if exclude_cols else []
 
     def fit(self, X: pd.DataFrame, y=None):
