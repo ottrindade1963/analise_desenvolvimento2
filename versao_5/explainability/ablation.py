@@ -1,14 +1,3 @@
-"""explainability/ablation.py — Ablation study across governance specifications.
-
-Directly answers the research hypothesis:
-  "Do WGI governance indicators improve industrial value-added forecasting,
-   and through which channel?"
-
-NOTE: models were trained on StandardScaler-transformed data inside each
-walk-forward fold. This module replicates that scaling (fit on train,
-transform on test) before calling predict(), so RMSE values are comparable
-to the walk-forward results.
-"""
 import os
 import pickle
 import warnings
