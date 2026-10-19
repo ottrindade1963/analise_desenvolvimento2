@@ -40,26 +40,3 @@ ABLATION_SPECS = {
     #     Answers: full governance specification with moderation effects.
     "A5_WDI_6WGI_inter": {"wgi_pca": False, "wgi_raw": True,  "interactions": True},
 }
-
-# ── Forecast horizons ─────────────────────────────────────────────────────────
-# NEW in versão_5: this constant existed in the original project too, but
-# was never referenced anywhere — every prediction there was contemporaneous
-# (same-year covariates and label), not a genuine forward forecast (see
-# relatorio1's horizon section). Here it is actually wired in:
-# validation/walk_forward.py::build_horizon_target() shifts the label
-# `horizon` calendar years into the future (year-exact, not positional —
-# see preprocessing/temporal.py), and pipeline.py::run_pipeline() loops
-# over every horizon below, evaluating every spec×model combination once
-# per horizon.
-#
-# CORRECTION (user request — "deve fazer a previsão para ano t, t+1, t+2,
-# t+3, t+4 e t+5", clarified afterward — "eu quero previsão genuína. Ele
-# tem que prever até 5 anos à frente"): extended from the original {1, 2}
-# to {1, 2, 3, 4, 5} — every horizon here is a GENUINE forward forecast
-# (target `horizon` calendar years after each row's own year). h=0
-# (contemporaneous/nowcasting — predicting the target from covariates of
-# its own year) is deliberately NOT included: that is what the original
-# project (versão_4) already does, and is explicitly not the point of
-# versão_5. h=1 remains the "primary" horizon that explainability/ablation
-# default to (see pipeline.py::PRIMARY_HORIZON).
-FORECAST_HORIZONS = [1, 2, 3, 4, 5]  # t+1, t+2, t+3, t+4, t+5 — genuine forecasts only
