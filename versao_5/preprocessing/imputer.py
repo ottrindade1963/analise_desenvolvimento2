@@ -1,15 +1,3 @@
-"""preprocessing/imputer.py — Fold-safe MICE imputer for panel data.
-
-PanelMICEImputer is a scikit-learn compatible Transformer that applies
-IterativeImputer independently per country.  Because it implements
-fit() and transform() separately, it can be placed inside a Pipeline
-and will never leak future information when used within walk-forward CV:
-  - fit()       → learns imputation models from training data ONLY
-  - transform() → applies those models to test data
-
-This is the correct solution for Problem 1 (look-ahead bias) described
-in the methodological review.
-"""
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
