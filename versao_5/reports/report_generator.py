@@ -33,8 +33,7 @@ def generate_performance_table(results_csv: str) -> dict:
     df = _normalise(pd.read_csv(results_csv))
 
     metric_cols = [c for c in ["RMSE","MAE","R2","MASE","MAPE"] if c in df.columns]
-    # NEW in versão_5: "Horizon" joins the grouping key so h=1 and h=2 are
-    # never silently averaged together into one meaningless RMSE.
+   
     id_cols     = [c for c in ["Specification","Model","Horizon"] if c in df.columns]
 
     # Aggregate folds → mean per Specification × Model
@@ -42,8 +41,7 @@ def generate_performance_table(results_csv: str) -> dict:
         df = df.groupby(id_cols)[metric_cols].mean().reset_index()
 
     cols   = [c for c in id_cols + metric_cols if c in df.columns]
-    # CORRECTION (user request — 4 decimal places read as false precision for
-    # RMSE/R2 at this scale): reduced from .round(4) to .round(3).
+  
     df_tbl = df[cols].round(3)
 
     csv_path = os.path.join(paths.REPORTS_DIR, "table_performance.csv")
@@ -103,18 +101,7 @@ def generate_ablation_table(ablation_csv: str, dm_csv: str) -> dict:
     df_abl = pd.read_csv(ablation_csv)
     cols   = ["Specification","Model","RMSE","R2"]
     df_out = df_abl[[c for c in cols if c in df_abl.columns]].copy()
-
-    # DEFENSIVE GUARD (caught in sandbox testing): when spec_datasets has
-    # only one specification (e.g. a reduced ABLATION_SPECS, or a horizon
-    # where every other spec was skipped for lack of genuine test data —
-    # see explainability/ablation.py's target-NaN filter), run_ablation()
-    # has nothing to compare the baseline against, so ablation_dm_tests.csv
-    # is written with zero rows AND zero columns — pd.DataFrame([]).to_csv()
-    # still emits a trailing newline, so the file is 1 byte, not 0; a plain
-    # size check does not catch it. pd.read_csv() raises EmptyDataError on
-    # that (no header row to parse) rather than returning an empty frame,
-    # which would otherwise crash report generation. Try the read and treat
-    # "genuinely no columns" the same as "file absent".
+   
     df_dm = None
     if dm_csv and os.path.exists(dm_csv):
         try:
@@ -145,27 +132,16 @@ def generate_ablation_table(ablation_csv: str, dm_csv: str) -> dict:
 
 
 def generate_seed_robustness_table(results_csv: str) -> dict:
-    """
-    CORRECTION (user request — "implemente 3 seeds... para que no fim
-    possamos fazer comparações de desempenho"): walkforward_results.csv now
-    has one row per (fold, spec, model, seed) instead of one per
-    (fold, spec, model). This aggregates across BOTH folds and seeds to
-    report mean ± std per spec×model, so the reader can see how sensitive
-    each model's RMSE/R2 is to its random initialization — a model whose
-    std is a large fraction of its mean is not "well tuned" in a
-    seed-robust sense, whatever its best single-seed number looks like.
-    """
+  
     if not results_csv or not os.path.exists(results_csv):
         return {}
     df = _normalise(pd.read_csv(results_csv))
     if "seed" not in df.columns:
         return {}
 
-    # CORRECTION (user request — "incluir as métricas MAPE também nos logs"):
-    # MAPE joins RMSE/R2 in the seed-robustness aggregation.
+  
     metric_cols = [c for c in ["RMSE", "MAPE", "R2"] if c in df.columns]
-    # NEW in versão_5: group by Horizon too, for the same reason as
-    # generate_performance_table above.
+    
     id_cols     = [c for c in ["Specification", "Model", "Horizon"] if c in df.columns]
     if not id_cols or not metric_cols:
         return {}
@@ -174,11 +150,7 @@ def generate_seed_robustness_table(results_csv: str) -> dict:
     agg.columns = [f"{m}_{stat}" for m, stat in agg.columns]
     agg = agg.reset_index()
 
-    # Number of distinct seeds actually observed per group, and whether the
-    # model's outcome is a deterministic no-op across seeds (SARIMAX, and
-    # the BayesianRidge/Ridge fallbacks when PyMC/TensorFlow are
-    # unavailable) — reported explicitly instead of silently showing
-    # std=0 as if that were evidence of "well tuned" stability.
+  
     n_seeds = df.groupby(id_cols)["seed"].nunique().rename("n_seeds")
     agg = agg.merge(n_seeds.reset_index(), on=id_cols)
 
@@ -220,22 +192,7 @@ def generate_seed_comparison_table(results_csv: str) -> dict:
 
 
 def generate_cost_table(results_csv: str) -> dict:
-    """
-    CORRECTION (user request — "implemente funções para medição do custo
-    computacional para cada modelo e estratégia" / later refined to
-    "mostrar nos logs o custo computacional de cada dataset (estratégia)
-    de cada modelo"): aggregates the per-fold fit_time_s / predict_time_s
-    / peak_mem_mb instrumentation. Three granularities are produced: per
-    Model alone (across all specs/horizons), per Specification×Model
-    (dataset-level breakdown), and — NEW in versão_5, since cost can also
-    vary with the forecast horizon (different leak-guard drop fractions
-    change effective training-set size per horizon) — per
-    Specification×Model×Horizon.
-    peak_mem_mb is a process-wide high-water mark (see
-    validation/walk_forward.py::_peak_rss_mb docstring) — reported as a
-    max across rows, not summed/averaged, since it is not an isolated
-    per-call measurement.
-    """
+ 
     if not results_csv or not os.path.exists(results_csv):
         return {}
     df = _normalise(pd.read_csv(results_csv))
@@ -272,21 +229,7 @@ def generate_cost_table(results_csv: str) -> dict:
 
 
 def generate_horizon_comparison_table(results_csv: str) -> dict:
-    """
-    NEW in versão_5 (user request — originally "implemente isso para
-    horizontes de 1 e 2 anos... para que no fim possamos fazer comparações
-    de desempenho", later extended to genuine forecasts for h=1..5 — no
-    contemporaneous/h=0 case). Pivots mean RMSE/MAPE/R2 (aggregated across
-    folds and seeds) so every horizon sits side by side per
-    Specification×Model, plus the raw and relative RMSE change of each
-    h≥2 relative to the smallest genuine-forecast horizon evaluated
-    (normally h=1) — generalized to however many horizons
-    config/features.py::FORECAST_HORIZONS actually declares, instead of a
-    hardcoded h1-vs-h2 pair. A positive delta means that horizon's forecast
-    is, on average, worse than the baseline one for that spec×model — the
-    expected direction (harder to predict further out) but not assumed; it
-    is read off the actual walk-forward results.
-    """
+ 
     if not results_csv or not os.path.exists(results_csv):
         return {}
     df = _normalise(pd.read_csv(results_csv))
@@ -302,9 +245,7 @@ def generate_horizon_comparison_table(results_csv: str) -> dict:
     piv = agg.pivot(index=id_cols, columns="Horizon", values=metric_cols)
     piv.columns = [f"{m}_h{int(h)}" for m, h in piv.columns]
     piv = piv.reset_index()
-
-    # Baseline horizon for the delta comparison: the smallest genuine
-    # forecast horizon actually evaluated (normally h=1).
+    
     horizons_present = sorted(df["Horizon"].dropna().unique().astype(int))
     if horizons_present:
         baseline_h = horizons_present[0]
