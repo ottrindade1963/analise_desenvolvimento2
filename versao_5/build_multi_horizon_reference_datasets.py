@@ -1,33 +1,3 @@
-"""build_multi_horizon_reference_datasets.py — Standalone pre-training step.
-
-NEW in versão_5 (user request — "Antes do treinamento, no processo de
-agregação de dados WDI + WGI, deve gerar um dataset com os inputs (WDI +
-WGI) nos seus respetivos anos e a outputs com a variável alvo 1 (t+1)...
-variável alvo 5 (t+5)... preenchidas com a mediana. Cada combinação de
-inputs + ano de previsão deve gerar também um dataset independente.").
-
-Run this AFTER the WDI+WGI aggregation step has produced
-data/aggregated/agregado_inner_join.csv (the same file pipeline.py's
-_load_clean_data() reads) and BEFORE running pipeline.py:
-
-    python build_multi_horizon_reference_datasets.py
-
-WHY THIS IS A SEPARATE SCRIPT, NOT A STEP INSIDE pipeline.py: the datasets
-it produces have their trailing empty target cells filled with each
-country's own historical median — a deliberate, clearly-flagged
-fabrication for documentation/completeness purposes only (see
-preprocessing/multi_horizon_reference.py's module docstring for the full
-rationale, and relatorio2 for the disclosure). Keeping this entirely
-outside pipeline.py's import graph is a structural guarantee — not just a
-convention — that these median-filled values can never be accidentally
-wired into model training or evaluation by some future change to
-pipeline.py: there is no import path from pipeline.py to this script, and
-the directory it writes to (data/aggregated/referencia_multi_horizonte/)
-is never read by _load_clean_data() or by anything else pipeline.py calls.
-The actual training/evaluation labels keep coming exclusively from
-validation/walk_forward.py::build_horizon_target(), which drops
-(never fabricates) rows whose true target is unknown.
-"""
 import os
 import sys
 
