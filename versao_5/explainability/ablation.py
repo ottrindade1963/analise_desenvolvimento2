@@ -93,29 +93,10 @@ def run_ablation(
         # Split train / test
         mask_tr = df["year"] <  test_year_cutoff
         mask_te = df["year"] >= test_year_cutoff
-
-        # CORRECTION (versão_5): use the horizon-shifted label attached by
-        # pipeline.py::_build_spec_datasets ("__y_h__") — the loaded models
-        # (modelo_{spec}_{model}.pkl, unsuffixed) were trained against the
-        # primary forecast horizon, not the contemporaneous var.TARGET;
-        # scoring against the wrong quantity would silently invalidate
-        # every RMSE/R2 this function reports.
+       
         y_col = "__y_h__" if "__y_h__" in df.columns else var.TARGET
 
-        # CORRECTION (h=5 ablation crash — root cause fix): rows whose
-        # shifted target falls beyond the last available year have a NaN
-        # y_col — there is no genuine future value to compare against.
-        # walk_forward.py already excludes these rows from every fold
-        # ("linhas descartadas: alvo em t+H indisponível"); ablation.py
-        # used a fixed test_year_cutoff shared across all horizons and did
-        # NOT apply the same exclusion, so at large horizons (fewer years
-        # left after the +h shift) the test window could end up 100% NaN
-        # target for a given spec — every model's RMSE became NaN, and the
-        # resulting all-NaN heatmap crashed seaborn's vmin/vmax computation
-        # (np.nanmin on a zero-size array after dropping NaNs). Applying the
-        # same "no genuine label → not evaluated" rule here keeps ablation
-        # consistent with walk-forward and prevents silently scoring against
-        # missing data.
+        
         n_te_before  = int(mask_te.sum())
         mask_te      = mask_te & df[y_col].notna()
         n_dropped_te = n_te_before - int(mask_te.sum())
@@ -144,10 +125,7 @@ def run_ablation(
             if not os.path.exists(pkl):
                 continue
             try:
-                # CORRECTION: models are now persisted as {"model","scaler","feat_cols"}
-                # bundles (utils/model_io.py) — unwrap the model object. This module
-                # already fits its own train/test-consistent scaler above (see
-                # docstring), so the persisted scaler is not needed here.
+               
                 model, _persisted_scaler, _persisted_cols = load_model_bundle(pkl)
                 y_pred = np.asarray(model.predict(X_te_s), dtype=float)
 
@@ -179,11 +157,7 @@ def run_ablation(
 
     # ── DM tests vs WDI baseline ──────────────────────────────────────────────
     dm_rows      = []
-    # CORRECTION (root-cause diagnostic report, Secção 10.4 / recomendação #6):
-    # the baseline used to be implicit ("first key of the dict"), which happened
-    # to always be A1_WDI_only only because of ABLATION_SPECS's current
-    # insertion order — silently fragile to any future reordering. Now explicit,
-    # falling back to the first dict key only as a defensive last resort.
+    
     baseline_spec = "A1_WDI_only" if "A1_WDI_only" in spec_datasets else next(iter(spec_datasets))
 
     for mod_name in model_names:
@@ -237,12 +211,7 @@ def run_ablation(
     # 1. RMSE heatmap
     pivot = df_abl.pivot_table(values="RMSE", index="Specification",
                                 columns="Model", aggfunc="mean")
-    # DEFENSIVE GUARD (belt-and-suspenders alongside the NaN-target filter
-    # above): if every cell is still NaN — e.g. a model×spec combination
-    # with fewer than 3 valid test points survives the filter but _rmse's
-    # own m.sum()>=3 guard returns NaN — seaborn's vmin/vmax computation
-    # (np.nanmin) crashes on a zero-size array after dropping NaNs. Skip
-    # the figure with a clear log message instead of crashing the run.
+   
     if pivot.notna().to_numpy().any():
         fig, ax = plt.subplots(figsize=(12, 5))
         sns.heatmap(pivot, annot=True, fmt=".3f", cmap="RdYlGn_r",
